@@ -1,0 +1,82 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code (optional — uncomment if you don't want to sync settings)
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+coverage/
+.flutter-plugins-dependencies
+
+# Generated plugin registrant
+**/GeneratedPluginRegistrant.*
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android build artifacts
+**/android/.gradle/
+**/android/captures/
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+
+# Android local properties (critical to ignore!)
+android/local.properties
+
+# Android key store files
+*.jks
+*.keystore
+key.properties
+
+# Firebase private files
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# iOS / macOS
+**/Pods/
+**/ios/Flutter/ephemeral/
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
+
+# Linux artifacts
+**/*.so
+**/*.dylib
+
+# Windows system files
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment config
+.env
+.env.*
