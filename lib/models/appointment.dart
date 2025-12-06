@@ -23,7 +23,9 @@ class Appointment {
       doctorId: json['doctor_id'] ?? '',
       caretakerId: json['caretaker_id'] ?? '',
       patientId: json['patient_id'] ?? '',
-      dateTime: DateTime.parse(json['date_time']),
+      dateTime: json['date_time'] != null
+          ? DateTime.parse(json['date_time'])
+          : DateTime.now(), // or throw
       purpose: json['purpose'] ?? '',
       status: json['status'] ?? '',
     );
@@ -43,3 +45,5 @@ class Appointment {
   String toString() =>
       'Appointment(Doctor: $doctorId, Patient: $patientId, Status: $status)';
 }
+
+enum AppointmentStatus { pending, confirmed, completed }

@@ -5,7 +5,7 @@ class DoctorFeedback {
   final String caretakerId;
   final DateTime dateTime;
   final String advicePrescription;
-  final String nextCheckupDate;
+  final DateTime? nextCheckupDate;
   final String status;
 
   DoctorFeedback({
@@ -27,7 +27,9 @@ class DoctorFeedback {
       caretakerId: json['caretaker_id'] ?? '',
       dateTime: DateTime.parse(json['date_time']),
       advicePrescription: json['advice_prescription'] ?? '',
-      nextCheckupDate: json['next_checkup_date'] ?? '',
+      nextCheckupDate: json['next_checkup_date'] != null
+          ? DateTime.tryParse(json['next_checkup_date'])
+          : null,
       status: json['status'] ?? '',
     );
   }
@@ -39,11 +41,7 @@ class DoctorFeedback {
     'caretaker_id': caretakerId,
     'date_time': dateTime.toIso8601String(),
     'advice_prescription': advicePrescription,
-    'next_checkup_date': nextCheckupDate,
+    'next_checkup_date': nextCheckupDate?.toIso8601String(),
     'status': status,
   };
-
-  @override
-  String toString() =>
-      'DoctorFeedback(Doctor: $doctorId → Caretaker: $caretakerId, Status: $status)';
 }

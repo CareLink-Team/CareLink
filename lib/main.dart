@@ -1,6 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'services/supabase_service.dart';
+import 'services/auth_service.dart';
+import 'core/utils/session_manager.dart';
+import 'Patient_Caretaker_App/views/auth/login_screen.dart'; // adjust import paths
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: 'https://YOUR-SUPABASE-URL.supabase.co',
+    anonKey: 'YOUR-ANON-KEY',
+    // Optionally: localStorage for web or secure storage setup
+  );
+
   runApp(const MyApp());
 }
 
@@ -10,7 +22,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(body: Center(child: Text("CareLink Working"))),
+      title: 'CareLink',
+      home: const LoginScreen(), // your login screen
     );
   }
 }
