@@ -35,8 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   supabase_client: ^0.0.33
-  # supabase_codegen_flutter: ^3.0.1
-  supabase_auth_package: ^0.0.2
+
   supabase_flutter: ^2.10.3
 
 dev_dependencies:

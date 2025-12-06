@@ -2,7 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
 
 class AuthService {
-  final supabase = SupabaseService.client;
+  final supabase = SupabaseService().supabase;
 
   Future<AuthResponse> register(
     String email,

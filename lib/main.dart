@@ -7,11 +7,8 @@ import 'Patient_Caretaker_App/views/auth/login_screen.dart'; // adjust import pa
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: 'https://YOUR-SUPABASE-URL.supabase.co',
-    anonKey: 'YOUR-ANON-KEY',
-    // Optionally: localStorage for web or secure storage setup
-  );
+
+  await SupabaseService().init(); // initialize once
 
   runApp(const MyApp());
 }
