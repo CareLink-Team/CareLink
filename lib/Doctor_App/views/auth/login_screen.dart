@@ -1,4 +1,6 @@
+import 'package:carelink/core/utils/session_manager.dart';
 import 'package:flutter/material.dart';
+import '../../features/auth/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -116,16 +118,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           backgroundColor: const Color(0xFF1976D2),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            // TEMP login success
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Doctor logged in')),
+                        onPressed: () async {
+                          if (!_formKey.currentState!.validate()) return;
+
+                          try {
+                            await DoctorAuthService().loginDoctor(
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text.trim(),
                             );
 
-                            Navigator.pushReplacementNamed(
+                            Navigator.pushReplacement(
                               context,
-                              '/doctorHome',
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    SessionManager.redirectUser('doctor'),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString())),
                             );
                           }
                         },
