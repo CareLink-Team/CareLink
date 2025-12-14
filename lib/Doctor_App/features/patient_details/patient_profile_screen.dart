@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../models/patient.dart';
-import '../patient_details/overviewTab.dart';
-import '../patient_details/vitalsTab.dart';
+import '../../../models/userProfile.dart';
 
-import '../patient_details/feedbackTab.dart';
+import 'overviewTab.dart';
+import 'vitalsTab.dart';
+import 'feedbackTab.dart';
 
 class PatientProfileScreen extends StatelessWidget {
   final Patient patient;
+  final UserProfile userProfile;
 
-  const PatientProfileScreen({super.key, required this.patient});
+  const PatientProfileScreen({
+    super.key,
+    required this.patient,
+    required this.userProfile,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +22,7 @@ class PatientProfileScreen extends StatelessWidget {
       length: 4,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Patient Profile'),
+          title: Text(userProfile.fullName), // ✅ name from user_profiles
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Overview'),
@@ -28,8 +34,9 @@ class PatientProfileScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            OverviewTab(patient: patient),
+            OverviewTab(patient: patient), // ✅ unchanged
             VitalsTab(patientId: patient.patientId),
+            const Center(child: Text('Reports coming soon')),
             FeedbackTab(patientId: patient.patientId),
           ],
         ),

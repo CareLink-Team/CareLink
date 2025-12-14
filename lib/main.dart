@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/supabase_service.dart';
-import 'services/auth_service.dart';
 import 'core/utils/session_manager.dart';
 import 'Patient_Caretaker_App/views/auth/login_screen.dart'; // adjust import paths
 

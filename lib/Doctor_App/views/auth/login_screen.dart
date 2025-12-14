@@ -13,7 +13,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   bool _obscurePassword = true;
-  String? _selectedRole; // patient or caretaker
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +23,6 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-
               // 🔹 App Logo / Name
               const Icon(
                 Icons.medical_services,
@@ -47,15 +45,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-
                     // Email
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
                         labelText: 'Email',
-                        prefixIcon:
-                            Icon(Icons.email, color: Color(0xFF1976D2)),
+                        prefixIcon: Icon(Icons.email, color: Color(0xFF1976D2)),
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
@@ -77,8 +73,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        prefixIcon:
-                            const Icon(Icons.lock, color: Color(0xFF1976D2)),
+                        prefixIcon: const Icon(
+                          Icons.lock,
+                          color: Color(0xFF1976D2),
+                        ),
                         border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -106,43 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 20),
 
-                    // 🔹 Login As (Role Selection)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Login as',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1976D2),
-                        ),
-                      ),
-                    ),
-
                     const SizedBox(height: 8),
-
-                    RadioListTile<String>(
-                      value: 'patient',
-                      groupValue: _selectedRole,
-                      title: const Text('Patient'),
-                      activeColor: const Color(0xFF1976D2),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedRole = value;
-                        });
-                      },
-                    ),
-
-                    RadioListTile<String>(
-                      value: 'caretaker',
-                      groupValue: _selectedRole,
-                      title: const Text('Caretaker'),
-                      activeColor: const Color(0xFF1976D2),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedRole = value;
-                        });
-                      },
-                    ),
 
                     const SizedBox(height: 24),
 
@@ -156,35 +118,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
-
-                            if (_selectedRole == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content:
-                                      Text('Please select Patient or Caretaker'),
-                                ),
-                              );
-                              return;
-                            }
-
-                            // 🔐 TEMP LOGIN SUCCESS
+                            // TEMP login success
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Logged in as ${_selectedRole!.toUpperCase()}'),
-                              ),
+                              const SnackBar(content: Text('Doctor logged in')),
                             );
 
-                            // 🔀 Role-based navigation
-                            if (_selectedRole == 'patient') {
-                              Navigator.pushReplacementNamed(
-                                  context, '/patientHome');
-                            } else {
-                              Navigator.pushReplacementNamed(
-                                  context, '/caretakerHome');
-                            }
+                            Navigator.pushReplacementNamed(
+                              context,
+                              '/doctorHome',
+                            );
                           }
                         },
+
                         child: const Text(
                           'Login',
                           style: TextStyle(fontSize: 16),
