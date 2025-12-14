@@ -10,7 +10,7 @@ class ProfileService {
   Future<Caretaker?> getCaretakerById(String patientId) async {
     try {
       final response = await _db
-          .from('caretakers')
+          .from('caretaker_profiles')
           .select()
           .eq('patient_id', patientId)
           .maybeSingle();

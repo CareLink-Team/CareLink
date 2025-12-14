@@ -29,7 +29,7 @@ class PatientService {
   Future<Patient?> getPatientById(String patientId) async {
     try {
       final response = await _db
-          .from('patients')
+          .from('patient_profiles')
           .select()
           .eq('patient_id', patientId)
           .maybeSingle();
