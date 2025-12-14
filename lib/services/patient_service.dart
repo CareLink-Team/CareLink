@@ -10,7 +10,7 @@ class PatientService {
   ) async {
     try {
       final response = await _db
-          .from('patients')
+          .from('patient_profiles')
           .select('''
           *,
           user_profiles (

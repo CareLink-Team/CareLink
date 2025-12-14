@@ -120,6 +120,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         onPressed: () async {
                           if (!_formKey.currentState!.validate()) return;
+                          print(_emailController.text.trim());
+                          print(_passwordController.text);
 
                           try {
                             await DoctorAuthService().loginDoctor(
