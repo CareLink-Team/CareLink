@@ -3,6 +3,7 @@ class Caretaker {
   final int age;
   final String gender;
   final String contactNumber;
+  final String patientId;
   final String doctorId;
 
   Caretaker({
@@ -10,6 +11,7 @@ class Caretaker {
     required this.age,
     required this.gender,
     required this.contactNumber,
+    required this.patientId,
     required this.doctorId,
   });
 
@@ -19,6 +21,7 @@ class Caretaker {
       age: json['age'] ?? 0,
       gender: json['gender'] ?? '',
       contactNumber: json['contact_number'] ?? '',
+      patientId: json['patient_id'] ?? '',
       doctorId: json['doctor_id'] ?? '',
     );
   }
@@ -28,6 +31,7 @@ class Caretaker {
     'age': age,
     'gender': gender,
     'contact_number': contactNumber,
+    'patient_id': patientId,
     'doctor_id': doctorId,
   };
 }
