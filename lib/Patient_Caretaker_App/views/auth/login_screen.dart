@@ -209,10 +209,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                   // Navigate to the correct home
                                   if (_selectedRole == 'patient') {
+                                    final String patientId = user
+                                        .id; // <- use .id instead of user['id']
+
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => const PatientHome(),
+                                        builder: (_) =>
+                                            PatientHome(patientId: patientId),
                                       ),
                                     );
                                   } else {

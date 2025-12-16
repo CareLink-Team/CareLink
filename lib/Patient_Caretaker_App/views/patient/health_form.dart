@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HealthForm extends StatefulWidget {
-  const HealthForm({super.key});
+  final String patientId;
+
+  const HealthForm({
+    super.key,
+    required this.patientId,
+  });
 
   @override
   State<HealthForm> createState() => _HealthFormState();
@@ -9,18 +15,61 @@ class HealthForm extends StatefulWidget {
 
 class _HealthFormState extends State<HealthForm> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _systolicController = TextEditingController();
-  final TextEditingController _diastolicController = TextEditingController();
-  final TextEditingController _heartRateController = TextEditingController();
-  final TextEditingController _temperatureController = TextEditingController();
-  final List<String> _symptoms = [];
 
+  final _systolicController = TextEditingController();
+  final _diastolicController = TextEditingController();
+  final _bloodSugarController = TextEditingController();
+  final _remarksController = TextEditingController();
+
+  bool _medicationTaken = false;
+  bool _loading = false;
+
+  final List<String> _selectedSymptoms = [];
   final List<String> _allSymptoms = [
     'Fever',
     'Cough',
-    'Difficulty Breathing',
     'Fatigue',
+    'Headache',
+    'Breathing Issue',
   ];
+
+  Future<void> _submitHealthData() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _loading = true);
+
+    try {
+      final supabase = Supabase.instance.client;
+
+      await supabase.from('health_data').insert({
+        'patient_id': widget.patientId,
+        'date_time': DateTime.now().toIso8601String(),
+        'blood_pressure_systolic':
+            int.parse(_systolicController.text),
+        'blood_pressure_diastolic':
+            int.parse(_diastolicController.text),
+        'blood_sugar_level':
+            double.parse(_bloodSugarController.text),
+        'medication_taken': _medicationTaken,
+        'symptoms': _selectedSymptoms.join(', '),
+        'remarks': _remarksController.text.trim(),
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Health data saved successfully')),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,27 +82,18 @@ class _HealthFormState extends State<HealthForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 👩‍⚕️ Blood Pressure
               const Text('Blood Pressure (mmHg)'),
+
               Row(
                 children: [
                   Expanded(
                     child: TextFormField(
                       controller: _systolicController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        hintText: 'Systolic',
-                        prefixIcon: Icon(
-                          Icons.arrow_upward,
-                          color: Color(0xFF1976D2),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Enter systolic';
-                        }
-                        return null;
-                      },
+                      decoration:
+                          const InputDecoration(hintText: 'Systolic'),
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Required' : null,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -61,19 +101,10 @@ class _HealthFormState extends State<HealthForm> {
                     child: TextFormField(
                       controller: _diastolicController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        hintText: 'Diastolic',
-                        prefixIcon: Icon(
-                          Icons.arrow_downward,
-                          color: Color(0xFF1976D2),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Enter diastolic';
-                        }
-                        return null;
-                      },
+                      decoration:
+                          const InputDecoration(hintText: 'Diastolic'),
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Required' : null,
                     ),
                   ),
                 ],
@@ -81,78 +112,66 @@ class _HealthFormState extends State<HealthForm> {
 
               const SizedBox(height: 16),
 
-              // ❤️ Heart Rate
               TextFormField(
-                controller: _heartRateController,
+                controller: _bloodSugarController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Heart Rate (bpm)',
-                  prefixIcon: Icon(Icons.favorite, color: Color(0xFF1976D2)),
+                  labelText: 'Blood Sugar Level',
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Enter heart rate';
-                  return null;
-                },
+                validator: (v) =>
+                    v == null || v.isEmpty ? 'Required' : null,
               ),
 
               const SizedBox(height: 16),
 
-              // 🌡 Temperature
-              TextFormField(
-                controller: _temperatureController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Temperature (°C)',
-                  prefixIcon: Icon(Icons.thermostat, color: Color(0xFF1976D2)),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Enter temperature';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              // 🤒 Symptoms Multi-Select
               const Text('Symptoms'),
               Wrap(
                 spacing: 8,
-                children: _allSymptoms.map((symptom) {
-                  final isSelected = _symptoms.contains(symptom);
+                children: _allSymptoms.map((s) {
+                  final selected = _selectedSymptoms.contains(s);
                   return FilterChip(
-                    label: Text(symptom),
-                    selected: isSelected,
-                    onSelected: (selected) {
+                    label: Text(s),
+                    selected: selected,
+                    onSelected: (v) {
                       setState(() {
-                        if (selected) {
-                          _symptoms.add(symptom);
-                        } else {
-                          _symptoms.remove(symptom);
-                        }
+                        v
+                            ? _selectedSymptoms.add(s)
+                            : _selectedSymptoms.remove(s);
                       });
                     },
-                    selectedColor: Colors.blue.shade100,
                   );
                 }).toList(),
               ),
 
+              const SizedBox(height: 16),
+
+              SwitchListTile(
+                title: const Text('Medication Taken'),
+                value: _medicationTaken,
+                onChanged: (v) {
+                  setState(() => _medicationTaken = v);
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _remarksController,
+                decoration: const InputDecoration(
+                  labelText: 'Remarks',
+                ),
+                maxLines: 3,
+              ),
+
               const SizedBox(height: 30),
 
-              // 🔘 Submit Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      // Submit logic here
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Health data submitted!')),
-                      );
-                    }
-                  },
-                  child: const Text('Submit'),
+                  onPressed: _loading ? null : _submitHealthData,
+                  child: _loading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Submit'),
                 ),
               ),
             ],

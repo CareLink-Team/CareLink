@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AppointmentRequest extends StatefulWidget {
-  const AppointmentRequest({super.key});
+  final String patientId;
+
+  const AppointmentRequest({
+    super.key,
+    required this.patientId,
+  });
 
   @override
   State<AppointmentRequest> createState() => _AppointmentRequestState();
@@ -9,15 +15,81 @@ class AppointmentRequest extends StatefulWidget {
 
 class _AppointmentRequestState extends State<AppointmentRequest> {
   final _formKey = GlobalKey<FormState>();
+
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
-  final TextEditingController _doctorController = TextEditingController();
+  final TextEditingController _purposeController = TextEditingController();
 
-  // Sample upcoming appointments
-  final List<Map<String, String>> _appointments = [
-    {'date': '2025-12-15', 'time': '10:00 AM', 'doctor': 'Dr. Ahmed'},
-    {'date': '2025-12-20', 'time': '02:00 PM', 'doctor': 'Dr. Sara'},
-  ];
+  bool _loading = false;
+  List<Map<String, dynamic>> _appointments = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAppointments();
+  }
+
+  Future<void> _fetchAppointments() async {
+    final supabase = Supabase.instance.client;
+
+    final response = await supabase
+        .from('appointments')
+        .select()
+        .eq('patient_id', widget.patientId)
+        .order('date_time', ascending: true);
+
+    setState(() {
+      _appointments = List<Map<String, dynamic>>.from(response);
+    });
+  }
+
+  Future<void> _submitAppointment() async {
+    if (!_formKey.currentState!.validate() ||
+        _selectedDate == null ||
+        _selectedTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please complete all fields')),
+      );
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      final supabase = Supabase.instance.client;
+
+      final dateTime = DateTime(
+        _selectedDate!.year,
+        _selectedDate!.month,
+        _selectedDate!.day,
+        _selectedTime!.hour,
+        _selectedTime!.minute,
+      );
+
+      await supabase.from('appointments').insert({
+        'patient_id': widget.patientId,
+        'date_time': dateTime.toIso8601String(),
+        'purpose': _purposeController.text.trim(),
+        'status': 'pending',
+      });
+
+      _purposeController.clear();
+      _selectedDate = null;
+      _selectedTime = null;
+
+      await _fetchAppointments();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment requested')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +100,6 @@ class _AppointmentRequestState extends State<AppointmentRequest> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔹 Form Heading
             const Text(
               'Request New Appointment',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -39,118 +110,74 @@ class _AppointmentRequestState extends State<AppointmentRequest> {
               key: _formKey,
               child: Column(
                 children: [
-                  // 👨‍⚕️ Doctor Name
                   TextFormField(
-                    controller: _doctorController,
+                    controller: _purposeController,
                     decoration: const InputDecoration(
-                      labelText: 'Doctor Name',
-                      prefixIcon: Icon(Icons.person, color: Color(0xFF1976D2)),
+                      labelText: 'Purpose',
+                      prefixIcon: Icon(Icons.notes),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Enter doctor name';
-                      }
-                      return null;
-                    },
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Required' : null,
                   ),
+
                   const SizedBox(height: 12),
 
-                  // 📅 Select Date
                   InkWell(
                     onTap: () async {
-                      DateTime? picked = await showDatePicker(
+                      final picked = await showDatePicker(
                         context: context,
                         initialDate: DateTime.now(),
                         firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                        lastDate:
+                            DateTime.now().add(const Duration(days: 365)),
                       );
                       if (picked != null) {
-                        setState(() {
-                          _selectedDate = picked;
-                        });
+                        setState(() => _selectedDate = picked);
                       }
                     },
                     child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Select Date',
-                        prefixIcon: Icon(
-                          Icons.calendar_today,
-                          color: Color(0xFF1976D2),
-                        ),
-                      ),
+                      decoration:
+                          const InputDecoration(labelText: 'Select Date'),
                       child: Text(
-                        _selectedDate != null
-                            ? '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}'
-                            : 'Tap to select date',
-                        style: TextStyle(
-                          color: _selectedDate != null
-                              ? Colors.black
-                              : Colors.grey[600],
-                        ),
+                        _selectedDate == null
+                            ? 'Tap to select'
+                            : _selectedDate!.toLocal().toString().split(' ')[0],
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 12),
 
-                  // ⏰ Select Time
                   InkWell(
                     onTap: () async {
-                      TimeOfDay? picked = await showTimePicker(
+                      final picked = await showTimePicker(
                         context: context,
                         initialTime: TimeOfDay.now(),
                       );
                       if (picked != null) {
-                        setState(() {
-                          _selectedTime = picked;
-                        });
+                        setState(() => _selectedTime = picked);
                       }
                     },
                     child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Select Time',
-                        prefixIcon: Icon(
-                          Icons.access_time,
-                          color: Color(0xFF1976D2),
-                        ),
-                      ),
+                      decoration:
+                          const InputDecoration(labelText: 'Select Time'),
                       child: Text(
-                        _selectedTime != null
-                            ? _selectedTime!.format(context)
-                            : 'Tap to select time',
-                        style: TextStyle(
-                          color: _selectedTime != null
-                              ? Colors.black
-                              : Colors.grey[600],
-                        ),
+                        _selectedTime == null
+                            ? 'Tap to select'
+                            : _selectedTime!.format(context),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  // 🔘 Submit Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate() &&
-                            _selectedDate != null &&
-                            _selectedTime != null) {
-                          // Placeholder: Add appointment logic
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Appointment requested!'),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please complete all fields'),
-                            ),
-                          );
-                        }
-                      },
-                      child: const Text('Request Appointment'),
+                      onPressed: _loading ? null : _submitAppointment,
+                      child: _loading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Request Appointment'),
                     ),
                   ),
                 ],
@@ -159,7 +186,6 @@ class _AppointmentRequestState extends State<AppointmentRequest> {
 
             const SizedBox(height: 30),
 
-            // 🔹 Upcoming Appointments
             const Text(
               'Upcoming Appointments',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -167,25 +193,26 @@ class _AppointmentRequestState extends State<AppointmentRequest> {
             const SizedBox(height: 12),
 
             _appointments.isEmpty
-                ? const Text(
-                    'No upcoming appointments.',
-                    style: TextStyle(color: Colors.grey),
-                  )
+                ? const Text('No upcoming appointments')
                 : ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: _appointments.length,
                     itemBuilder: (context, index) {
                       final appt = _appointments[index];
+                      final date =
+                          DateTime.parse(appt['date_time']).toLocal();
+
                       return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
+                        margin: const EdgeInsets.only(bottom: 10),
                         child: ListTile(
-                          leading: const Icon(
-                            Icons.calendar_today,
-                            color: Color(0xFF1976D2),
+                          leading: const Icon(Icons.calendar_today),
+                          title: Text(
+                            '${date.toString().split(' ')[0]} at ${TimeOfDay.fromDateTime(date).format(context)}',
                           ),
-                          title: Text('${appt['date']} at ${appt['time']}'),
-                          subtitle: Text('Doctor: ${appt['doctor']}'),
+                          subtitle: Text(
+                            'Status: ${appt['status']}',
+                          ),
                         ),
                       );
                     },

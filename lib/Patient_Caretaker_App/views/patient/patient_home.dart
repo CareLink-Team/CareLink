@@ -1,21 +1,101 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'health_form.dart';
 import 'health_list.dart';
 import 'appointment_request.dart';
 
-class PatientHome extends StatelessWidget {
-  const PatientHome({super.key});
+class PatientHome extends StatefulWidget {
+  final String patientId;
+
+  const PatientHome({
+    super.key,
+    required this.patientId,
+  });
+
+  @override
+  State<PatientHome> createState() => _PatientHomeState();
+}
+
+class _PatientHomeState extends State<PatientHome> {
+  final supabase = Supabase.instance.client;
+
+  String patientName = '';
+  String bloodPressure = '-- / --';
+  String appointmentText = 'No upcoming appointments';
+
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchPatientData();
+  }
+
+  Future<void> fetchPatientData() async {
+  try {
+    // 1️⃣ Get patient full name from user_profiles
+    final patient = await supabase
+        .from('user_profiles')
+        .select('full_name')
+        .eq('user_id', widget.patientId)
+        .single();
+
+    // 2️⃣ Latest health record
+    final health = await supabase
+        .from('health_data')
+        .select('blood_pressure_systolic, blood_pressure_diastolic')
+        .eq('patient_id', widget.patientId)
+        .order('date_time', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    // 3️⃣ Upcoming appointment
+    final appointment = await supabase
+        .from('appointments')
+        .select('date_time')
+        .eq('patient_id', widget.patientId)
+        .gte('date_time', DateTime.now().toIso8601String())
+        .order('date_time')
+        .limit(1)
+        .maybeSingle();
+
+    setState(() {
+      patientName = patient['full_name']; // use full_name column
+
+      if (health != null) {
+        bloodPressure =
+            '${health['blood_pressure_systolic']} / ${health['blood_pressure_diastolic']}';
+      }
+
+      if (appointment != null) {
+        final date = DateTime.parse(appointment['date_time']).toLocal();
+        appointmentText = 'Next appointment on ${date.toString().split(' ')[0]}';
+      }
+
+      loading = false;
+    });
+  } catch (e) {
+    debugPrint(e.toString());
+    setState(() => loading = false);
+  }
+}
 
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FB),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // Header (simple & calm)
+            // Header
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 56, 20, 24),
@@ -28,22 +108,19 @@ class PatientHome extends StatelessWidget {
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
-                    'Hi Sarah',
-                    style: TextStyle(
+                    'Hi $patientName',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 21,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
+                  const SizedBox(height: 4),
+                  const Text(
                     'Here’s a quick look at your health today',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ],
               ),
@@ -56,30 +133,26 @@ class PatientHome extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
-                  // Section title
                   const Text(
                     'Health Summary',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style:
+                        TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                   ),
 
                   const SizedBox(height: 10),
 
-                  // Blood Pressure Card
                   _infoCard(
                     icon: Icons.favorite,
                     title: 'Blood Pressure',
-                    value: '120 / 80',
-                    status: 'Normal',
+                    value: bloodPressure,
+                    status: bloodPressure == '-- / --'
+                        ? 'No data'
+                        : 'Recorded',
                     statusColor: Colors.green,
                   ),
 
                   const SizedBox(height: 18),
 
-                  // Appointment Card
                   Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(
@@ -88,14 +161,14 @@ class PatientHome extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.all(14),
                       child: Row(
-                        children: const [
-                          Icon(Icons.event_note,
+                        children: [
+                          const Icon(Icons.event_note,
                               color: Color(0xFF1976D2)),
-                          SizedBox(width: 10),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'No upcoming appointments',
-                              style: TextStyle(fontSize: 14),
+                              appointmentText,
+                              style: const TextStyle(fontSize: 14),
                             ),
                           ),
                         ],
@@ -105,16 +178,6 @@ class PatientHome extends StatelessWidget {
 
                   const SizedBox(height: 26),
 
-                  const Text(
-                    'What would you like to do?',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
                   _actionTile(
                     context,
                     icon: Icons.add_circle_outline,
@@ -123,7 +186,8 @@ class PatientHome extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const HealthForm(),
+                        builder: (_) =>
+                            HealthForm(patientId: widget.patientId),
                       ),
                     ),
                   ),
@@ -136,7 +200,8 @@ class PatientHome extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const HealthList(),
+                        builder: (_) =>
+                            HealthList(patientId: widget.patientId),
                       ),
                     ),
                   ),
@@ -149,7 +214,8 @@ class PatientHome extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const AppointmentRequest(),
+                        builder: (_) =>
+                            AppointmentRequest(patientId: widget.patientId),
                       ),
                     ),
                   ),
@@ -162,7 +228,6 @@ class PatientHome extends StatelessWidget {
     );
   }
 
-  // Health summary card (soft, simple)
   Widget _infoCard({
     required IconData icon,
     required String title,
@@ -211,7 +276,6 @@ class PatientHome extends StatelessWidget {
     );
   }
 
-  // Action tiles (natural spacing)
   Widget _actionTile(
     BuildContext context, {
     required IconData icon,
@@ -227,10 +291,8 @@ class PatientHome extends StatelessWidget {
       ),
       child: ListTile(
         leading: Icon(icon, color: const Color(0xFF1976D2)),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
+        title:
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle),
         trailing:
             const Icon(Icons.chevron_right, color: Colors.black45),
