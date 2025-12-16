@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../patient/patient_home.dart';
+import '../caretaker/caretaker_home.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +17,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _obscurePassword = true;
   String? _selectedRole; // patient or caretaker
+  bool _loading = false;
+
+  final supabase = Supabase.instance.client;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +30,6 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-
               // 🔹 App Logo / Name
               const Icon(
                 Icons.medical_services,
@@ -47,15 +52,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-
                     // Email
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
                         labelText: 'Email',
-                        prefixIcon:
-                            Icon(Icons.email, color: Color(0xFF1976D2)),
+                        prefixIcon: Icon(Icons.email, color: Color(0xFF1976D2)),
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
@@ -77,8 +80,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        prefixIcon:
-                            const Icon(Icons.lock, color: Color(0xFF1976D2)),
+                        prefixIcon: const Icon(
+                          Icons.lock,
+                          color: Color(0xFF1976D2),
+                        ),
                         border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -146,72 +151,99 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 24),
 
-                    // 🔹 Login Button
+                    // Login Button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1976D2),
+                          backgroundColor: const Color.fromARGB(
+                            255,
+                            75,
+                            121,
+                            167,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
+                        onPressed: _loading
+                            ? null
+                            : () async {
+                                if (!_formKey.currentState!.validate()) return;
 
-                            if (_selectedRole == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content:
-                                      Text('Please select Patient or Caretaker'),
-                                ),
-                              );
-                              return;
-                            }
+                                if (_selectedRole == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Please select Patient or Caretaker',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                setState(() => _loading = true);
 
-                            // 🔐 TEMP LOGIN SUCCESS
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Logged in as ${_selectedRole!.toUpperCase()}'),
+                                try {
+                                  // Supabase Auth sign-in
+                                  final res = await supabase.auth
+                                      .signInWithPassword(
+                                        email: _emailController.text.trim(),
+                                        password: _passwordController.text
+                                            .trim(),
+                                      );
+
+                                  final user = res.user;
+                                  if (user == null) {
+                                    throw 'Login failed';
+                                  }
+
+                                  // Check role in profile table
+                                  final profile = await supabase
+                                      .from('user_profiles')
+                                      .select('role')
+                                      .eq('user_id', user.id)
+                                      .single();
+
+                                  if (profile == null ||
+                                      profile['role'] != _selectedRole) {
+                                    throw 'Role mismatch';
+                                  }
+
+                                  // Navigate to the correct home
+                                  if (_selectedRole == 'patient') {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const PatientHome(),
+                                      ),
+                                    );
+                                  } else {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const CaretakerHome(),
+                                      ),
+                                    );
+                                  }
+                                } on AuthException catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(e.message)),
+                                  );
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(e.toString())),
+                                  );
+                                } finally {
+                                  setState(() => _loading = false);
+                                }
+                              },
+                        child: _loading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                'Login',
+                                style: TextStyle(fontSize: 16),
                               ),
-                            );
-
-                            // 🔀 Role-based navigation
-                            if (_selectedRole == 'patient') {
-                              Navigator.pushReplacementNamed(
-                                  context, '/patientHome');
-                            } else {
-                              Navigator.pushReplacementNamed(
-                                  context, '/caretakerHome');
-                            }
-                          }
-                        },
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(fontSize: 16),
-                        ),
                       ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Register Link
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text("Don't have an account? "),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/register');
-                          },
-                          child: const Text(
-                            'Register',
-                            style: TextStyle(
-                              color: Color(0xFF1976D2),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
