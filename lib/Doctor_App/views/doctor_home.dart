@@ -4,6 +4,7 @@ import '../widgets/dashboard_card.dart';
 import '../../core/theme/theme.dart';
 import '../features/patient_list/patient_list.dart';
 import '../views/auth/login_screen.dart';
+import '../features/appointments/doc_appointments.dart';
 
 class DoctorHome extends StatefulWidget {
   const DoctorHome({super.key, required String doctorId});
@@ -94,16 +95,19 @@ class _DoctorHomeState extends State<DoctorHome> {
           }
         },
       ),
+
+      /// APPOINTMENTS
       DashboardCard(
         icon: Icons.calendar_month_outlined,
         title: "Appointments",
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DoctorAppointmentsScreen()),
+          );
+        },
       ),
-      DashboardCard(
-        icon: Icons.health_and_safety_rounded,
-        title: "Prescriptions",
-        onTap: () {},
-      ),
+
       DashboardCard(
         icon: Icons.logout_rounded,
         title: "Logout",

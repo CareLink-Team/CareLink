@@ -1,3 +1,4 @@
+import 'package:carelink/Doctor_App/features/patient_details/vitalsTab.dart';
 import 'package:flutter/material.dart';
 import 'package:carelink/core/theme/theme.dart';
 import 'appointment.dart';
@@ -39,8 +40,9 @@ class PatientProfileScreen extends StatelessWidget {
         body: TabBarView(
           children: [
             OverviewTab(patientId: patientId), //pass patient's ID
-            PrescriptionTab(), //abhi tak not pass
-            AppointmentTab(), //same
+            VitalsTab(patientId: patientId),
+            AppointmentTab(patientId: patientId),
+            PrescriptionTab(patientId: patientId),
           ],
         ),
       ),

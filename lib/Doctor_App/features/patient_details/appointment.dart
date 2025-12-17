@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import '../../../services/appointment_service.dart';
 
 class AppointmentTab extends StatelessWidget {
-  AppointmentTab({super.key});
+  final String patientId;
+
+  AppointmentTab({super.key, required this.patientId});
 
   final AppointmentService service = AppointmentService();
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: service.getDoctorAppointments(),
+      future: service.getAppointmentsForPatient(patientId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -36,10 +38,6 @@ class AppointmentTab extends StatelessWidget {
           itemBuilder: (context, index) {
             final data = appointments[index];
 
-            final patientName =
-                data['patient_profiles']?['user_profiles']?['full_name'] ??
-                'Unknown Patient';
-
             final caretakerName =
                 data['caretaker_profiles']?['user_profiles']?['full_name'] ??
                 'No caretaker';
@@ -53,14 +51,13 @@ class AppointmentTab extends StatelessWidget {
               ),
               child: ListTile(
                 title: Text(
-                  patientName,
+                  data['purpose'] ?? 'Appointment',
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Caretaker: $caretakerName'),
-                    Text('Purpose: ${data['purpose'] ?? 'N/A'}'),
                     Text('Status: ${data['status']}'),
                   ],
                 ),
