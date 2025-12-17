@@ -6,7 +6,7 @@ import 'caretaker_notes.dart';
 import 'patient_list.dart';
 
 class CaretakerHome extends StatefulWidget {
-  const CaretakerHome({super.key});
+  const CaretakerHome({super.key, required String caretakerId});
 
   @override
   State<CaretakerHome> createState() => _CaretakerHomeState();

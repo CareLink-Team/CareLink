@@ -1,43 +1,46 @@
 import 'package:flutter/material.dart';
-import '../../../models/patient.dart';
-import '../../../models/userProfile.dart';
-
-import 'overviewTab.dart';
-import 'vitalsTab.dart';
-import 'feedbackTab.dart';
+import 'package:carelink/core/theme/theme.dart';
+import 'appointment.dart';
+import 'overview.dart';
+import 'prescription.dart';
 
 class PatientProfileScreen extends StatelessWidget {
-  final Patient patient;
-  final UserProfile userProfile;
+  final String patientId;
 
-  const PatientProfileScreen({
-    super.key,
-    required this.patient,
-    required this.userProfile,
-  });
+  const PatientProfileScreen({super.key, required this.patientId});
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
+        backgroundColor: AppTheme.lightBlue,
         appBar: AppBar(
-          title: Text(userProfile.fullName), // ✅ name from user_profiles
+          elevation: 0,
+          backgroundColor: AppTheme.primaryBlue,
+          title: const Text(
+            'Patient Profile',
+            style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+          ),
+          centerTitle: true,
           bottom: const TabBar(
+            indicatorColor: Colors.white,
+            indicatorWeight: 3,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
             tabs: [
               Tab(text: 'Overview'),
               Tab(text: 'Vitals'),
-              Tab(text: 'Reports'),
-              Tab(text: 'Feedback'),
+              Tab(text: 'Appointments'),
+              Tab(text: 'Prescription'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            OverviewTab(patient: patient), // ✅ unchanged
-            VitalsTab(patientId: patient.patientId),
-            const Center(child: Text('Reports coming soon')),
-            FeedbackTab(patientId: patient.patientId),
+            OverviewTab(patientId: patientId), //pass patient's ID
+            PrescriptionTab(), //abhi tak not pass
+            AppointmentTab(), //same
           ],
         ),
       ),

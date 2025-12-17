@@ -202,8 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       .eq('user_id', user.id)
                                       .single();
 
-                                  if (profile == null ||
-                                      profile['role'] != _selectedRole) {
+                                  if (profile['role'] != _selectedRole) {
                                     throw 'Role mismatch';
                                   }
 
@@ -220,10 +219,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                     );
                                   } else {
+                                    final String caretakerId = user.id;
+
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => const CaretakerHome(),
+                                        builder: (_) => CaretakerHome(
+                                          caretakerId: caretakerId,
+                                        ),
                                       ),
                                     );
                                   }

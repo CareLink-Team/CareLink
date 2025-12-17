@@ -1,5 +1,4 @@
 import 'package:carelink/services/supabase_service.dart';
-import '../models/patient.dart';
 
 class PatientService {
   final _db = SupabaseService().supabase;
@@ -26,19 +25,39 @@ class PatientService {
   }
 
   //fetch patient by id (for profile)
-  Future<Patient?> getPatientById(String patientId) async {
-    try {
-      final response = await _db
-          .from('patient_profiles')
-          .select()
-          .eq('patient_id', patientId)
-          .maybeSingle();
+  Future<Map<String, dynamic>?> getPatientById(String patientId) async {
+    final response = await _db
+        .from('patient_profiles')
+        .select('''
+        *,
+        user_profiles(
+          full_name,
+          email
+        )
+      ''')
+        .eq('patient_id', patientId)
+        .maybeSingle();
 
-      if (response == null) return null;
+    return response;
+  }
 
-      return Patient.fromJson(response);
-    } catch (e) {
-      throw Exception('Failed to load patient: $e');
-    }
+  //fetch caretaker by patient id (for profile)
+
+  Future<Map<String, dynamic>?> getCaretakerByPatientId(
+    String patientId,
+  ) async {
+    final response = await _db
+        .from('caretaker_profiles')
+        .select('''
+        *,
+        user_profiles(
+          full_name,
+          email
+        )
+      ''')
+        .eq('patient_id', patientId)
+        .maybeSingle();
+
+    return response;
   }
 }

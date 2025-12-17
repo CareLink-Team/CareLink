@@ -3,9 +3,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/dashboard_card.dart';
 import '../../core/theme/theme.dart';
 import '../features/patient_list/patient_list.dart';
+import '../views/auth/login_screen.dart';
 
 class DoctorHome extends StatefulWidget {
-  const DoctorHome({super.key});
+  const DoctorHome({super.key, required String doctorId});
 
   @override
   State<DoctorHome> createState() => _DoctorHomeState();
@@ -37,6 +38,23 @@ class _DoctorHomeState extends State<DoctorHome> {
       setState(() {
         doctorName = response['full_name'] ?? "Doctor";
       });
+    }
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    try {
+      await Supabase.instance.client.auth.signOut();
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Logout failed: $e")));
     }
   }
 
@@ -87,9 +105,9 @@ class _DoctorHomeState extends State<DoctorHome> {
         onTap: () {},
       ),
       DashboardCard(
-        icon: Icons.feedback_outlined,
+        icon: Icons.logout_rounded,
         title: "Logout",
-        onTap: () {},
+        onTap: () => _logout(context),
       ),
     ];
 

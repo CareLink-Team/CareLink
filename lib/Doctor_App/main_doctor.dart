@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/supabase_service.dart';
 import 'views/auth/login_screen.dart';
@@ -31,21 +30,19 @@ class DoctorApp extends StatelessWidget {
   }
 }
 
-/// 🔐 Session Gate for Doctor App
 class DoctorSessionGate extends StatelessWidget {
   const DoctorSessionGate({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final client = Supabase.instance.client;
-    final session = client.auth.currentSession;
+    final user = SupabaseService().currentUser;
 
-    // ❌ No session → Doctor Login
-    if (session == null) {
+    // ❌ Not logged in
+    if (user == null) {
       return const LoginScreen();
     }
 
-    // ✅ Session exists → Doctor Home
-    return DoctorHome();
+    // ✅ Logged in → pass doctorId
+    return DoctorHome(doctorId: user.id);
   }
 }
