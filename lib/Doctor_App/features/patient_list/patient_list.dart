@@ -28,32 +28,30 @@ class _PatientListScreenState extends State<PatientListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.lightBlue,
+
+      // 🔹 SIMPLE APP BAR (NO TITLE)
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
         elevation: 0,
+        backgroundColor: AppTheme.primaryBlue,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Color.fromARGB(255, 26, 25, 25),
-          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text("My Patients", style: TextStyle(color: Colors.white)),
-        centerTitle: true,
       ),
+
       body: Column(
         children: [
-          // 🔹 HEADER SECTION (can keep it or remove AppBar title duplication)
+          // 🔹 HEADER (CONSISTENT WITH DASHBOARD)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-            decoration: BoxDecoration(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [AppTheme.primaryBlue, AppTheme.darkBlue],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(28),
                 bottomRight: Radius.circular(28),
               ),
@@ -62,14 +60,23 @@ class _PatientListScreenState extends State<PatientListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
-                  "View and manage your assigned patients",
-                  style: TextStyle(fontSize: 15, color: Colors.white70),
+                  "My Patients",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  "View and manage assigned patients",
+                  style: TextStyle(fontSize: 14, color: Colors.white70),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
 
           // 🔹 PATIENT LIST
           Expanded(
@@ -101,21 +108,14 @@ class _PatientListScreenState extends State<PatientListScreen> {
                   itemBuilder: (context, index) {
                     final data = patients[index];
 
-                    final patientId = data['patient_id'];
-                    final fullName =
-                        data['user_profiles']?['full_name'] ?? 'No name';
-                    final age = data['age'] ?? 'N/A';
-                    final gender = data['gender'] ?? 'Unknown';
-                    final condition =
-                        data['medical_condition'] ?? 'Not specified';
-
                     return AnimatedPatientCard(
                       index: index,
-                      patientId: patientId,
-                      fullName: fullName,
-                      age: age.toString(),
-                      gender: gender,
-                      condition: condition,
+                      patientId: data['patient_id'],
+                      fullName:
+                          data['user_profiles']?['full_name'] ?? 'No name',
+                      age: (data['age'] ?? 'N/A').toString(),
+                      gender: data['gender'] ?? 'Unknown',
+                      condition: data['medical_condition'] ?? 'Not specified',
                     );
                   },
                 );
@@ -128,7 +128,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
   }
 }
 
-// --------------------- ANIMATED PATIENT CARD ---------------------
+// ===================== ANIMATED PATIENT CARD =====================
 
 class AnimatedPatientCard extends StatefulWidget {
   final int index;
@@ -155,8 +155,8 @@ class AnimatedPatientCard extends StatefulWidget {
 class _AnimatedPatientCardState extends State<AnimatedPatientCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  late final Animation<Offset> _slideAnimation;
-  late final Animation<double> _fadeAnimation;
+  late final Animation<Offset> _slide;
+  late final Animation<double> _fade;
 
   @override
   void initState() {
@@ -164,21 +164,20 @@ class _AnimatedPatientCardState extends State<AnimatedPatientCard>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 450),
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.2),
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.15),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
-    _fadeAnimation = Tween<double>(
+    _fade = Tween<double>(
       begin: 0,
       end: 1,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
-    // Staggered animation
-    Future.delayed(Duration(milliseconds: widget.index * 100), () {
+    Future.delayed(Duration(milliseconds: widget.index * 80), () {
       if (mounted) _controller.forward();
     });
   }
@@ -192,23 +191,22 @@ class _AnimatedPatientCardState extends State<AnimatedPatientCard>
   @override
   Widget build(BuildContext context) {
     return FadeTransition(
-      opacity: _fadeAnimation,
+      opacity: _fade,
       child: SlideTransition(
-        position: _slideAnimation,
+        position: _slide,
         child: GestureDetector(
-          onTap: widget.patientId.isNotEmpty
-              ? () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          PatientProfileScreen(patientId: widget.patientId),
-                    ),
-                  );
-                }
-              : null,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    PatientProfileScreen(patientId: widget.patientId),
+              ),
+            );
+          },
           child: Container(
             margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(18),
@@ -220,74 +218,67 @@ class _AnimatedPatientCardState extends State<AnimatedPatientCard>
                 ),
               ],
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  // Avatar
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundColor: AppTheme.primaryBlue,
-                    child: const Icon(
-                      Icons.person,
-                      color: AppTheme.lightBlue,
-                      size: 30,
-                    ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: AppTheme.primaryBlue,
+                  child: const Icon(
+                    Icons.person,
+                    color: AppTheme.lightBlue,
+                    size: 30,
                   ),
-                  const SizedBox(width: 14),
-
-                  // Patient Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.fullName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.fullName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "${widget.age} yrs • ${widget.gender}",
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade700,
-                          ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "${widget.age} yrs • ${widget.gender}",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade700,
                         ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.local_hospital,
-                              size: 14,
-                              color: Colors.redAccent,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                widget.condition,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade800,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.local_hospital,
+                            size: 14,
+                            color: Colors.redAccent,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              widget.condition,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade800,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-
-                  const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 16,
-                    color: Colors.grey,
-                  ),
-                ],
-              ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: Colors.grey,
+                ),
+              ],
             ),
           ),
         ),

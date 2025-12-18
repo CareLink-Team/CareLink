@@ -249,6 +249,7 @@ class _DoctorAppointmentsScreenState extends State<DoctorAppointmentsScreen> {
 
               Navigator.pop(context);
 
+              // ignore: unused_local_variable
               final removed = _appointments.removeAt(index);
               _listKey.currentState?.removeItem(
                 index,
