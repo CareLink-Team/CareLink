@@ -24,110 +24,108 @@ class _PatientListScreenState extends State<PatientListScreen> {
     service = PatientService();
   }
 
- 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: AppTheme.lightBlue,
-    appBar: AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 26, 25, 25)),
-        onPressed: () => Navigator.pop(context),
-      ),
-      title: const Text(
-        "My Patients",
-        style: TextStyle(color: Colors.white),
-      ),
-      centerTitle: true,
-    ),
-    body: Column(
-      children: [
-        // 🔹 HEADER SECTION (can keep it or remove AppBar title duplication)
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppTheme.primaryBlue, AppTheme.darkBlue],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(28),
-              bottomRight: Radius.circular(28),
-            ),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.lightBlue,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Color.fromARGB(255, 26, 25, 25),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                "View and manage your assigned patients",
-                style: TextStyle(fontSize: 15, color: Colors.white70),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text("My Patients", style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          // 🔹 HEADER SECTION (can keep it or remove AppBar title duplication)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppTheme.primaryBlue, AppTheme.darkBlue],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(28),
+                bottomRight: Radius.circular(28),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  "View and manage your assigned patients",
+                  style: TextStyle(fontSize: 15, color: Colors.white70),
+                ),
+              ],
+            ),
           ),
-        ),
 
-        const SizedBox(height: 10),
+          const SizedBox(height: 10),
 
-        // 🔹 PATIENT LIST
-        Expanded(
-          child: FutureBuilder<List<Map<String, dynamic>>>(
-            future: service.getPatientsForDoctor(doctorId),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
+          // 🔹 PATIENT LIST
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: service.getPatientsForDoctor(doctorId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              if (snapshot.hasError) {
-                return Center(child: Text(snapshot.error.toString()));
-              }
+                if (snapshot.hasError) {
+                  return Center(child: Text(snapshot.error.toString()));
+                }
 
-              final patients = snapshot.data ?? [];
+                final patients = snapshot.data ?? [];
 
-              if (patients.isEmpty) {
-                return const Center(
-                  child: Text(
-                    'No patients assigned',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: patients.length,
-                itemBuilder: (context, index) {
-                  final data = patients[index];
-
-                  final patientId = data['patient_id'];
-                  final fullName =
-                      data['user_profiles']?['full_name'] ?? 'No name';
-                  final age = data['age'] ?? 'N/A';
-                  final gender = data['gender'] ?? 'Unknown';
-                  final condition =
-                      data['medical_condition'] ?? 'Not specified';
-
-                  return AnimatedPatientCard(
-                    index: index,
-                    patientId: patientId,
-                    fullName: fullName,
-                    age: age.toString(),
-                    gender: gender,
-                    condition: condition,
+                if (patients.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No patients assigned',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   );
-                },
-              );
-            },
-          ),
-        ),
-      ],
-    ),
-  );
-}
+                }
 
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: patients.length,
+                  itemBuilder: (context, index) {
+                    final data = patients[index];
+
+                    final patientId = data['patient_id'];
+                    final fullName =
+                        data['user_profiles']?['full_name'] ?? 'No name';
+                    final age = data['age'] ?? 'N/A';
+                    final gender = data['gender'] ?? 'Unknown';
+                    final condition =
+                        data['medical_condition'] ?? 'Not specified';
+
+                    return AnimatedPatientCard(
+                      index: index,
+                      patientId: patientId,
+                      fullName: fullName,
+                      age: age.toString(),
+                      gender: gender,
+                      condition: condition,
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // --------------------- ANIMATED PATIENT CARD ---------------------
@@ -172,16 +170,12 @@ class _AnimatedPatientCardState extends State<AnimatedPatientCard>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.2),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _fadeAnimation = Tween<double>(
       begin: 0,
       end: 1,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
     // Staggered animation
     Future.delayed(Duration(milliseconds: widget.index * 100), () {
@@ -207,9 +201,8 @@ class _AnimatedPatientCardState extends State<AnimatedPatientCard>
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => PatientProfileScreen(
-                        patientId: widget.patientId,
-                      ),
+                      builder: (_) =>
+                          PatientProfileScreen(patientId: widget.patientId),
                     ),
                   );
                 }

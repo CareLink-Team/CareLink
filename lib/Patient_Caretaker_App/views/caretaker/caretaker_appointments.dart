@@ -311,46 +311,19 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments>
           appt['date_time'],
         ).toLocal().toString().split(' ')[0];
 
-        Color statusColor = appt['status'] == 'confirmed'
-            ? Colors.green
-            : appt['status'] == 'cancelled'
-            ? Colors.red
-            : Colors.orange;
-
-        return _animatedChild(
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            elevation: 3,
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: statusColor.withOpacity(0.15),
-                child: Icon(Icons.event, color: statusColor),
-              ),
-              title: Text(
-                appt['purpose'] ?? '',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              subtitle: Text(date),
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  appt['status'].toUpperCase(),
-                  style: TextStyle(
-                    color: statusColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                ),
+        return Card(
+          child: ListTile(
+            leading: const Icon(Icons.event),
+            title: Text(appt['purpose'] ?? ''),
+            subtitle: Text(date),
+            trailing: Text(
+              appt['status'],
+              style: TextStyle(
+                color: appt['status'] == 'confirmed'
+                    ? Colors.green
+                    : appt['status'] == 'cancelled'
+                        ? Colors.red
+                        : Colors.orange,
               ),
             ),
           ),
