@@ -13,89 +13,136 @@ class CaretakerAppointments extends StatefulWidget {
 class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
   final supabase = Supabase.instance.client;
 
-  bool _loading = true;
-  List<Map<String, dynamic>> _requests = [];
+  bool _loading = false;
+  bool _submitting = false;
+
+  String? _doctorId;
+  String? _patientId;
+
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _purposeController = TextEditingController();
+  DateTime? _selectedDate;
+
+  List<Map<String, dynamic>> _pending = [];
   List<Map<String, dynamic>> _approved = [];
   List<Map<String, dynamic>> _rejected = [];
 
   @override
   void initState() {
     super.initState();
+    _fetchAssignment();
     _fetchAppointments();
   }
 
-  Future<void> _fetchAppointments() async {
-    setState(() => _loading = true);
-
+  // Fetch doctor_id and patient_id assigned to caretaker
+  Future<void> _fetchAssignment() async {
     try {
-      // Fetch all appointments for this caretaker
-      final appointments = await supabase
-          .from('appointments')
-          .select('''
-      appointment_id,
-      date_time,
-      status,
-      purpose,
-      patient_profiles (
-        patient_id,
-        user_profiles (
-          full_name
-        )
-      )
-    ''')
+      final res = await supabase
+          .from('caretaker_profiles')
+          .select('doctor_id, patient_id')
           .eq('caretaker_id', widget.caretakerId)
-          .order('date_time');
-
-      final List<Map<String, dynamic>> all = List<Map<String, dynamic>>.from(
-        appointments,
-      );
+          .single();
 
       setState(() {
-        _requests = all.where((a) => a['status'] == 'pending').toList();
-        _approved = all.where((a) => a['status'] == 'confirmed').toList();
-        _rejected = all.where((a) => a['status'] == 'cancelled').toList();
-        _loading = false;
+        _doctorId = res['doctor_id'];
+        _patientId = res['patient_id'];
       });
-    } catch (e) {
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching appointments: $e')),
-      );
-    }
-  }
-
-  Future<void> _updateStatus(String appointmentId, String status) async {
-    try {
-      await supabase
-          .from('appointments')
-          .update({'status': status})
-          .eq('appointment_id', appointmentId);
-
-      // Refresh after update
-      _fetchAppointments();
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error updating appointment: $e')));
+      ).showSnackBar(SnackBar(content: Text('Assignment error: $e')));
+    }
+  }
+
+  // Fetch caretaker appointments
+  Future<void> _fetchAppointments() async {
+    setState(() => _loading = true);
+    try {
+      final res = await supabase
+          .from('appointments')
+          .select()
+          .eq('caretaker_id', widget.caretakerId)
+          .order('date_time', ascending: true);
+
+      final list = List<Map<String, dynamic>>.from(res);
+
+      setState(() {
+        _pending = list.where((a) => a['status'] == 'pending').toList();
+        _approved = list.where((a) => a['status'] == 'confirmed').toList();
+        _rejected = list.where((a) => a['status'] == 'cancelled').toList();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Fetch error: $e')));
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  // Submit appointment
+  Future<void> _submitAppointment() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedDate == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a date')));
+      return;
+    }
+
+    if (_doctorId == null || _patientId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Doctor or patient not assigned')),
+      );
+      return;
+    }
+
+    final dateTime = DateTime(
+      _selectedDate!.year,
+      _selectedDate!.month,
+      _selectedDate!.day,
+    ).toIso8601String();
+
+    setState(() => _submitting = true);
+
+    try {
+      await supabase.from('appointments').insert({
+        'doctor_id': _doctorId,
+        'caretaker_id': widget.caretakerId,
+        'patient_id': _patientId,
+        'date_time': dateTime,
+        'purpose': _purposeController.text,
+        'status': 'pending',
+      });
+
+      _purposeController.clear();
+      _selectedDate = null;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Appointment requested')));
+
+      await _fetchAppointments();
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Submit error: $e')));
+    } finally {
+      setState(() => _submitting = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F7FA),
         appBar: AppBar(
-          title: const Text('Manage Appointments'),
-          backgroundColor: const Color(0xFF1976D2),
+          title: const Text('Appointments'),
           bottom: const TabBar(
             tabs: [
-              Tab(text: 'Requests'),
+              Tab(text: 'Request'),
               Tab(text: 'Approved'),
               Tab(text: 'Rejected'),
             ],
@@ -103,26 +150,79 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
         ),
         body: TabBarView(
           children: [
-            _buildList(_requests, showActions: true),
-            _buildList(_approved, showActions: false),
-            _buildList(_rejected, showActions: false),
+            _buildRequestForm(),
+            _buildList(_approved),
+            _buildList(_rejected),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildList(
-    List<Map<String, dynamic>> list, {
-    required bool showActions,
-  }) {
-    if (list.isEmpty) {
-      return const Center(
-        child: Text(
-          'No appointments here.',
-          style: TextStyle(color: Colors.grey),
+  Widget _buildRequestForm() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            TextFormField(
+              controller: _purposeController,
+              decoration: const InputDecoration(
+                labelText: 'Purpose',
+                prefixIcon: Icon(Icons.notes),
+              ),
+              validator: (v) =>
+                  v == null || v.isEmpty ? 'Purpose required' : null,
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (picked != null) {
+                  setState(() => _selectedDate = picked);
+                }
+              },
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Select Date',
+                  prefixIcon: Icon(Icons.calendar_today),
+                ),
+                child: Text(
+                  _selectedDate == null
+                      ? 'Tap to select'
+                      : _selectedDate!.toLocal().toString().split(' ')[0],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submitting ? null : _submitAppointment,
+                child: _submitting
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Request Appointment'),
+              ),
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
+
+  Widget _buildList(List<Map<String, dynamic>> list) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (list.isEmpty) {
+      return const Center(child: Text('No appointments'));
     }
 
     return ListView.builder(
@@ -130,13 +230,9 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
       itemCount: list.length,
       itemBuilder: (context, index) {
         final appt = list[index];
-        final patientName =
-            appt['patient_profiles']?['user_profiles']?['full_name'] ??
-            'Unknown';
-        final dateTime = DateTime.parse(appt['date_time']).toLocal();
-        final date = dateTime.toString().split(' ')[0];
-        final time =
-            '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+        final date = DateTime.parse(
+          appt['date_time'],
+        ).toLocal().toString().split(' ')[0];
 
         return Card(
           elevation: 2,
@@ -145,34 +241,19 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: ListTile(
-            leading: const Icon(Icons.calendar_today, color: Color(0xFF1976D2)),
-            title: Text(patientName),
-            subtitle: Text('$date at $time'),
-            trailing: showActions
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.check_circle,
-                          color: Colors.green,
-                        ),
-                        onPressed: () =>
-                            _updateStatus(appt['appointment_id'], 'confirmed'),
-                        tooltip: 'Approve',
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.cancel, color: Colors.red),
-                        onPressed: () =>
-                            _updateStatus(appt['appointment_id'], 'cancelled'),
-                        tooltip: 'Reject',
-                      ),
-                    ],
-                  )
-                : Icon(
-                    list == _approved ? Icons.check_circle : Icons.cancel,
-                    color: list == _approved ? Colors.green : Colors.red,
-                  ),
+            leading: const Icon(Icons.event),
+            title: Text(appt['purpose'] ?? ''),
+            subtitle: Text(date),
+            trailing: Text(
+              appt['status'],
+              style: TextStyle(
+                color: appt['status'] == 'confirmed'
+                    ? Colors.green
+                    : appt['status'] == 'cancelled'
+                    ? Colors.red
+                    : Colors.orange,
+              ),
+            ),
           ),
         );
       },
