@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'caretaker_appointments.dart';
-import 'caretaker_notes.dart';
-import 'patient_list.dart';
-
 class CaretakerHome extends StatefulWidget {
   const CaretakerHome({super.key, required String caretakerId});
 
@@ -118,34 +115,7 @@ class _CaretakerHomeState extends State<CaretakerHome> {
                           }
                         },
                       ),
-                      _actionButton(
-                        context,
-                        icon: Icons.note_alt,
-                        label: 'Notes',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => CaretakerAppointments(
-                                caretakerId: caretakerId!,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      _actionButton(
-                        context,
-                        icon: Icons.people,
-                        label: 'Patients',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PatientListScreen(),
-                            ),
-                          );
-                        },
-                      ),
+                      
                     ],
                   ),
                 ],

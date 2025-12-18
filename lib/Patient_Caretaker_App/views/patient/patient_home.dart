@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'health_form.dart';
 import 'health_list.dart';
-import 'appointment_request.dart';
 
 class PatientHome extends StatefulWidget {
   final String patientId;
@@ -202,20 +201,6 @@ class _PatientHomeState extends State<PatientHome> {
                       MaterialPageRoute(
                         builder: (_) =>
                             HealthList(patientId: widget.patientId),
-                      ),
-                    ),
-                  ),
-
-                  _actionTile(
-                    context,
-                    icon: Icons.calendar_month,
-                    title: 'Request appointment',
-                    subtitle: 'Send a request to your caretaker',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            AppointmentRequest(patientId: widget.patientId),
                       ),
                     ),
                   ),
