@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
 // import '../core/utils/session_manager.dart';
-import 'views/auth/login_screen.dart'; // adjust import paths
+import 'views/auth/role_selection_screen.dart'; // adjust import paths
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'CareLink',
-      home: const LoginScreen(), // your login screen
+      home: const RoleSelectionScreen(), // your login screen
     );
   }
 }

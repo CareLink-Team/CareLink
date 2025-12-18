@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'caretaker_appointments.dart';
+
 class CaretakerHome extends StatefulWidget {
   const CaretakerHome({super.key, required String caretakerId});
 
@@ -115,7 +116,6 @@ class _CaretakerHomeState extends State<CaretakerHome> {
                           }
                         },
                       ),
-                      
                     ],
                   ),
                 ],

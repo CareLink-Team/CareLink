@@ -1,60 +1,70 @@
 import 'package:flutter/material.dart';
 import '../../../services/appointment_service.dart';
 
-class AppointmentTab extends StatelessWidget {
+class AppointmentTab extends StatefulWidget {
   final String patientId;
 
-  AppointmentTab({super.key, required this.patientId});
+  const AppointmentTab({super.key, required this.patientId});
 
+  @override
+  State<AppointmentTab> createState() => _AppointmentTabState();
+}
+
+class _AppointmentTabState extends State<AppointmentTab> {
   final AppointmentService service = AppointmentService();
+  List<Map<String, dynamic>> appointments = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppointments();
+  }
+
+  Future<void> _loadAppointments() async {
+    setState(() => loading = true);
+    final data = await service.getAppointmentsForPatient(widget.patientId);
+    setState(() {
+      appointments = data;
+      loading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: service.getAppointmentsForPatient(patientId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    if (loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              snapshot.error.toString(),
-              style: const TextStyle(color: Colors.red),
-            ),
+    if (appointments.isEmpty) {
+      return const Center(child: Text('No appointments found'));
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadAppointments,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: appointments.length,
+        itemBuilder: (context, index) {
+          final data = appointments[index];
+          final caretakerName =
+              data['caretaker_profiles']?['user_profiles']?['full_name'] ??
+              'No caretaker';
+          final dateTime = DateTime.parse(data['date_time']);
+          final status = data['status'] ?? 'pending';
+
+          return AnimatedAppointmentCard(
+            key: ValueKey(
+              data['appointment_id'],
+            ), // ensures animation works on rebuild
+            index: index,
+            title: data['purpose'] ?? 'Appointment',
+            caretakerName: caretakerName,
+            status: status,
+            date: "${dateTime.day}/${dateTime.month}/${dateTime.year}",
           );
-        }
-
-        final appointments = snapshot.data ?? [];
-
-        if (appointments.isEmpty) {
-          return const Center(child: Text('No appointments found'));
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: appointments.length,
-          itemBuilder: (context, index) {
-            final data = appointments[index];
-
-            final caretakerName =
-                data['caretaker_profiles']?['user_profiles']?['full_name'] ??
-                'No caretaker';
-
-            final dateTime = DateTime.parse(data['date_time']);
-
-            // Use animated card here
-            return AnimatedAppointmentCard(
-              index: index,
-              title: data['purpose'] ?? 'Appointment',
-              caretakerName: caretakerName,
-              status: data['status'] ?? 'Pending',
-              date: "${dateTime.day}/${dateTime.month}/${dateTime.year}",
-            );
-          },
-        );
-      },
+        },
+      ),
     );
   }
 }
@@ -100,18 +110,13 @@ class _AnimatedAppointmentCardState extends State<AnimatedAppointmentCard>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.2),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _fadeAnimation = Tween<double>(
       begin: 0,
       end: 1,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
-    // Delay animation based on index for staggered effect
     Future.delayed(Duration(milliseconds: widget.index * 100), () {
       if (mounted) _controller.forward();
     });
@@ -143,18 +148,33 @@ class _AnimatedAppointmentCardState extends State<AnimatedAppointmentCard>
             ],
           ),
           child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
             title: Text(
               widget.title,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: widget.status == 'cancelled' ? Colors.red : Colors.black,
+              ),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Caretaker: ${widget.caretakerName}'),
                 const SizedBox(height: 4),
-                Text('Status: ${widget.status}'),
+                Text(
+                  'Status: ${widget.status}',
+                  style: TextStyle(
+                    fontWeight: widget.status == 'cancelled'
+                        ? FontWeight.bold
+                        : FontWeight.w500,
+                    color: widget.status == 'cancelled'
+                        ? Colors.red
+                        : Colors.black,
+                  ),
+                ),
               ],
             ),
             trailing: Text(

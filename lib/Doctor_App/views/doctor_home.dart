@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../widgets/dashboard_card.dart';
 import '../../core/theme/theme.dart';
 import '../features/patient_list/patient_list.dart';
@@ -67,19 +68,13 @@ class _DoctorHomeState extends State<DoctorHome> {
     final bool isTablet = size.width >= 600 && size.width < 900;
     final bool isDesktop = size.width >= 900;
 
-    int crossAxisCount = isDesktop
+    final int crossAxisCount = isDesktop
         ? 4
         : isTablet
         ? 3
         : 2;
 
-    final double titleFont = isMobile
-        ? 22
-        : isTablet
-        ? 24
-        : 26;
-    final double subtitleFont = isMobile ? 16 : 18;
-
+    /// 🔹 DASHBOARD ITEMS (LOGIC UNCHANGED)
     final List<Widget> dashboardItems = [
       DashboardCard(
         icon: Icons.people_alt_rounded,
@@ -96,7 +91,6 @@ class _DoctorHomeState extends State<DoctorHome> {
         },
       ),
 
-      /// APPOINTMENTS
       DashboardCard(
         icon: Icons.calendar_month_outlined,
         title: "Appointments",
@@ -116,78 +110,138 @@ class _DoctorHomeState extends State<DoctorHome> {
     ];
 
     return Scaffold(
-      backgroundColor: AppTheme.lightBlue,
+      backgroundColor: const Color(0xFFF4F7FB),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: AppTheme.primaryBlue,
+        backgroundColor: Colors.transparent,
         centerTitle: true,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppTheme.primaryBlue, Color(0xFF4FACFE)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: const Text(
           "Doctor Dashboard",
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
         ),
       ),
       body: Column(
         children: [
-          // 🔹 HEADER
+          /// 🔹 HEADER
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 16 : 24,
-              vertical: isMobile ? 22 : 28,
+              horizontal: isMobile ? 18 : 26,
+              vertical: isMobile ? 26 : 32,
             ),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppTheme.primaryBlue, AppTheme.lightBlue],
+                colors: [AppTheme.primaryBlue, Color(0xFF4FACFE)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(28),
-                bottomRight: Radius.circular(28),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  "Welcome",
-                  style: TextStyle(color: Colors.white, fontSize: subtitleFont),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  doctorName,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: titleFont,
-                    fontWeight: FontWeight.bold,
+                /// Avatar
+                Container(
+                  width: 58,
+                  height: 58,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.25),
+                    shape: BoxShape.circle,
                   ),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    color: Colors.white,
+                    size: 34,
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                /// Text
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Welcome back 👋",
+                      style: TextStyle(color: Colors.white70, fontSize: 15),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      doctorName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
 
-          // 🔹 GRID
+          /// 🔹 DASHBOARD GRID
           Expanded(
             child: Padding(
-              padding: EdgeInsets.all(isMobile ? 12 : 16),
+              padding: EdgeInsets.symmetric(horizontal: isMobile ? 14 : 20),
               child: GridView.builder(
+                physics: const BouncingScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: crossAxisCount,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: isMobile ? 1 : 1.1,
+                  crossAxisSpacing: 18,
+                  mainAxisSpacing: 18,
+                  childAspectRatio: 1.05,
                 ),
                 itemCount: dashboardItems.length,
                 itemBuilder: (context, index) {
-                  return dashboardItems[index];
+                  return _DashboardWrapper(child: dashboardItems[index]);
                 },
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 🔹 UI WRAPPER (NO LOGIC)
+class _DashboardWrapper extends StatelessWidget {
+  final Widget child;
+
+  const _DashboardWrapper({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          colors: [Colors.white, Color(0xFFF8FAFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }

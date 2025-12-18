@@ -23,6 +23,7 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
   final TextEditingController _purposeController = TextEditingController();
   DateTime? _selectedDate;
 
+  // ignore: unused_field
   List<Map<String, dynamic>> _pending = [];
   List<Map<String, dynamic>> _approved = [];
   List<Map<String, dynamic>> _rejected = [];

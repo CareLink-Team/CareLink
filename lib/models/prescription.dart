@@ -15,10 +15,10 @@ class Prescription {
 
   factory Prescription.fromMap(Map<String, dynamic> map) {
     return Prescription(
-      id: map['prescription_id'],
+      id: map['prescription_id'] as String,
       notes: map['notes'],
       createdAt: DateTime.parse(map['created_at']),
-      items: (map['prescription_items'] as List)
+      items: (map['prescription_items'] as List<dynamic>? ?? [])
           .map((e) => PrescriptionItem.fromMap(e))
           .toList(),
     );
