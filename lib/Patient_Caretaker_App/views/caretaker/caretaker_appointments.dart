@@ -4,16 +4,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class CaretakerAppointments extends StatefulWidget {
   final String caretakerId;
 
-  const CaretakerAppointments({
-    super.key,
-    required this.caretakerId,
-  });
+  const CaretakerAppointments({super.key, required this.caretakerId});
 
   @override
   State<CaretakerAppointments> createState() => _CaretakerAppointmentsState();
 }
 
-class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
+class _CaretakerAppointmentsState extends State<CaretakerAppointments>
+    with SingleTickerProviderStateMixin {
   final supabase = Supabase.instance.client;
 
   bool _loading = false;
@@ -30,11 +28,20 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
   List<Map<String, dynamic>> _approved = [];
   List<Map<String, dynamic>> _rejected = [];
 
+  late TabController _tabController;
+
   @override
   void initState() {
     super.initState();
     _fetchAssignment();
     _fetchAppointments();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   // Fetch doctor_id and patient_id assigned to caretaker
@@ -51,9 +58,9 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
         _patientId = res['patient_id'];
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Assignment error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Assignment error: $e')));
     }
   }
 
@@ -75,9 +82,9 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
         _rejected = list.where((a) => a['status'] == 'cancelled').toList();
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fetch error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Fetch error: $e')));
     } finally {
       setState(() => _loading = false);
     }
@@ -88,9 +95,9 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a date')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a date')));
       return;
     }
 
@@ -122,18 +129,35 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
       _purposeController.clear();
       _selectedDate = null;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment requested')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Appointment requested')));
 
       await _fetchAppointments();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Submit error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Submit error: $e')));
     } finally {
       setState(() => _submitting = false);
     }
+  }
+
+  // Animated wrapper for fade + slide
+  Widget _animatedChild(Widget child, int index) {
+    return TweenAnimationBuilder(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: Duration(milliseconds: 300 + index * 100),
+      builder: (context, double value, _) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -143,8 +167,15 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Appointments'),
-          bottom: const TabBar(
-            tabs: [
+          backgroundColor: Colors.blue.shade800,
+          foregroundColor: Colors.white,
+          bottom: TabBar(
+            controller: _tabController,
+            indicatorColor: Colors.white,
+            indicatorWeight: 3,
+            labelColor: Colors.white, // Selected tab text color
+            unselectedLabelColor: Colors.white70, // Unselected tab text color
+            tabs: const [
               Tab(text: 'Request'),
               Tab(text: 'Approved'),
               Tab(text: 'Rejected'),
@@ -152,10 +183,11 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
           ),
         ),
         body: TabBarView(
+          controller: _tabController,
           children: [
-            _buildRequestForm(),
-            _buildList(_approved),
-            _buildList(_rejected),
+            _animatedChild(_buildRequestForm(), 0),
+            _animatedChild(_buildList(_approved), 1),
+            _animatedChild(_buildList(_rejected), 2),
           ],
         ),
       ),
@@ -171,9 +203,16 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
           children: [
             TextFormField(
               controller: _purposeController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Purpose',
-                prefixIcon: Icon(Icons.notes),
+                prefixIcon: const Icon(Icons.notes),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.blue.shade700),
+                ),
               ),
               validator: (v) =>
                   v == null || v.isEmpty ? 'Purpose required' : null,
@@ -192,25 +231,48 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
                 }
               },
               child: InputDecorator(
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Select Date',
-                  prefixIcon: Icon(Icons.calendar_today),
+                  prefixIcon: const Icon(Icons.calendar_today),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue.shade700),
+                  ),
                 ),
                 child: Text(
                   _selectedDate == null
                       ? 'Tap to select'
                       : _selectedDate!.toLocal().toString().split(' ')[0],
+                  style: TextStyle(
+                    color: _selectedDate == null
+                        ? Colors.grey.shade700
+                        : Colors.black,
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
+              height: 50,
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue.shade700,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 onPressed: _submitting ? null : _submitAppointment,
                 child: _submitting
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Request Appointment'),
+                    : const Text(
+                        'Request Appointment',
+                        style: TextStyle(fontSize: 16),
+                      ),
               ),
             ),
           ],
@@ -225,7 +287,19 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
     }
 
     if (list.isEmpty) {
-      return const Center(child: Text('No appointments'));
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.event_busy, size: 50, color: Colors.blue.shade200),
+            const SizedBox(height: 12),
+            Text(
+              'No appointments',
+              style: TextStyle(fontSize: 16, color: Colors.blue.shade300),
+            ),
+          ],
+        ),
+      );
     }
 
     return ListView.builder(
@@ -233,27 +307,54 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
       itemCount: list.length,
       itemBuilder: (context, index) {
         final appt = list[index];
-        final date = DateTime.parse(appt['date_time'])
-            .toLocal()
-            .toString()
-            .split(' ')[0];
+        final date = DateTime.parse(
+          appt['date_time'],
+        ).toLocal().toString().split(' ')[0];
 
-        return Card(
-          child: ListTile(
-            leading: const Icon(Icons.event),
-            title: Text(appt['purpose'] ?? ''),
-            subtitle: Text(date),
-            trailing: Text(
-              appt['status'],
-              style: TextStyle(
-                color: appt['status'] == 'confirmed'
-                    ? Colors.green
-                    : appt['status'] == 'cancelled'
-                        ? Colors.red
-                        : Colors.orange,
+        Color statusColor = appt['status'] == 'confirmed'
+            ? Colors.green
+            : appt['status'] == 'cancelled'
+            ? Colors.red
+            : Colors.orange;
+
+        return _animatedChild(
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            elevation: 3,
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: statusColor.withOpacity(0.15),
+                child: Icon(Icons.event, color: statusColor),
+              ),
+              title: Text(
+                appt['purpose'] ?? '',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(date),
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  appt['status'].toUpperCase(),
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
               ),
             ),
           ),
+          index,
         );
       },
     );
