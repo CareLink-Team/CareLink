@@ -1,4 +1,4 @@
-import 'package:carelink/Doctor_App/features/patient_details/vitalsTab.dart';
+import 'package:carelink/Doctor_App/features/patient_details/vitals.dart';
 import 'package:flutter/material.dart';
 import 'package:carelink/core/theme/theme.dart';
 import 'appointment.dart';
