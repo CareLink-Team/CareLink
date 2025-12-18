@@ -312,23 +312,22 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments>
         ).toLocal().toString().split(' ')[0];
 
         return Card(
-          child: ListTile(
-            leading: const Icon(Icons.event),
-            title: Text(appt['purpose'] ?? ''),
-            subtitle: Text(date),
-            trailing: Text(
-              appt['status'],
-              style: TextStyle(
-                color: appt['status'] == 'confirmed'
-                    ? Colors.green
-                    : appt['status'] == 'cancelled'
-                        ? Colors.red
-                        : Colors.orange,
-              ),
-            ),
-          ),
-          index,
-        );
+  child: ListTile(
+    leading: const Icon(Icons.event),
+    title: Text(appt['purpose'] ?? ''),
+    subtitle: Text(date),
+    trailing: Text(
+      appt['status'],
+      style: TextStyle(
+        color: appt['status'] == 'confirmed'
+            ? Colors.green
+            : appt['status'] == 'cancelled'
+                ? Colors.red
+                : Colors.orange,
+      ),
+    ),
+  ),
+);
       },
     );
   }
