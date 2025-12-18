@@ -31,16 +31,29 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
       // Fetch all appointments for this caretaker
       final appointments = await supabase
           .from('appointments')
-          .select('*, patient:user_profiles(full_name)') // join patient name
+          .select('''
+      appointment_id,
+      date_time,
+      status,
+      purpose,
+      patient_profiles (
+        patient_id,
+        user_profiles (
+          full_name
+        )
+      )
+    ''')
           .eq('caretaker_id', widget.caretakerId)
           .order('date_time');
 
-      final List<Map<String, dynamic>> all = List<Map<String, dynamic>>.from(appointments);
+      final List<Map<String, dynamic>> all = List<Map<String, dynamic>>.from(
+        appointments,
+      );
 
       setState(() {
         _requests = all.where((a) => a['status'] == 'pending').toList();
-        _approved = all.where((a) => a['status'] == 'approved').toList();
-        _rejected = all.where((a) => a['status'] == 'rejected').toList();
+        _approved = all.where((a) => a['status'] == 'confirmed').toList();
+        _rejected = all.where((a) => a['status'] == 'cancelled').toList();
         _loading = false;
       });
     } catch (e) {
@@ -56,23 +69,21 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
       await supabase
           .from('appointments')
           .update({'status': status})
-          .eq('id', appointmentId);
+          .eq('appointment_id', appointmentId);
 
       // Refresh after update
       _fetchAppointments();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating appointment: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error updating appointment: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return DefaultTabController(
@@ -101,7 +112,10 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
     );
   }
 
-  Widget _buildList(List<Map<String, dynamic>> list, {required bool showActions}) {
+  Widget _buildList(
+    List<Map<String, dynamic>> list, {
+    required bool showActions,
+  }) {
     if (list.isEmpty) {
       return const Center(
         child: Text(
@@ -116,15 +130,20 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
       itemCount: list.length,
       itemBuilder: (context, index) {
         final appt = list[index];
-        final patientName = appt['patient']?['full_name'] ?? 'Unknown';
+        final patientName =
+            appt['patient_profiles']?['user_profiles']?['full_name'] ??
+            'Unknown';
         final dateTime = DateTime.parse(appt['date_time']).toLocal();
-        final date = '${dateTime.toString().split(' ')[0]}';
-        final time = '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+        final date = dateTime.toString().split(' ')[0];
+        final time =
+            '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
 
         return Card(
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: ListTile(
             leading: const Icon(Icons.calendar_today, color: Color(0xFF1976D2)),
             title: Text(patientName),
@@ -134,13 +153,18 @@ class _CaretakerAppointmentsState extends State<CaretakerAppointments> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.check_circle, color: Colors.green),
-                        onPressed: () => _updateStatus(appt['id'], 'approved'),
+                        icon: const Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                        ),
+                        onPressed: () =>
+                            _updateStatus(appt['appointment_id'], 'confirmed'),
                         tooltip: 'Approve',
                       ),
                       IconButton(
                         icon: const Icon(Icons.cancel, color: Colors.red),
-                        onPressed: () => _updateStatus(appt['id'], 'rejected'),
+                        onPressed: () =>
+                            _updateStatus(appt['appointment_id'], 'cancelled'),
                         tooltip: 'Reject',
                       ),
                     ],

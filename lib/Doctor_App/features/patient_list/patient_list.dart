@@ -30,10 +30,10 @@ class _PatientListScreenState extends State<PatientListScreen> {
       backgroundColor: AppTheme.lightBlue,
       body: Column(
         children: [
-          // 🔹 HEADER SECTION
+          // HEADER SECTION
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 48, 20, 28),
+            padding: const EdgeInsets.fromLTRB(12, 44, 20, 28),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [AppTheme.primaryBlue, AppTheme.darkBlue],
@@ -47,8 +47,19 @@ class _PatientListScreenState extends State<PatientListScreen> {
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
+              children: [
+                // 🔙 Back Button
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  color: Colors.white,
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
                   "My Patients",
                   style: TextStyle(
                     fontSize: 26,
@@ -56,8 +67,8 @@ class _PatientListScreenState extends State<PatientListScreen> {
                     color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 6),
-                Text(
+                const SizedBox(height: 6),
+                const Text(
                   "View and manage your assigned patients",
                   style: TextStyle(fontSize: 15, color: Colors.white70),
                 ),
