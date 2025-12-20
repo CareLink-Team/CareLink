@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/theme.dart';
-import 'package:flutter/material.dart';
-import '../../core/theme/theme.dart';
 
 class DashboardCard extends StatelessWidget {
   final IconData icon;

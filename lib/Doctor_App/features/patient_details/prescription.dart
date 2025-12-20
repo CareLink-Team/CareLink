@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../services/prescription_service.dart';
 import '../../widgets/medicine_prescription.dart';
-import 'package:carelink/core/theme/theme.dart';
 
 class PrescriptionTab extends StatefulWidget {
   final String patientId;
@@ -19,7 +18,6 @@ class _PrescriptionTabState extends State<PrescriptionTab> {
 
   final List<MedicineForm> _medicines = [];
   bool _saving = false;
-
   @override
   void initState() {
     super.initState();
@@ -58,8 +56,9 @@ class _PrescriptionTabState extends State<PrescriptionTab> {
       _medicines.clear();
       _addMedicine();
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
 
     setState(() => _saving = false);
@@ -74,127 +73,81 @@ class _PrescriptionTabState extends State<PrescriptionTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔹 Title
-            Text(
+            const Text(
               'Write Prescription',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primaryBlue,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
 
-            // 🔹 Doctor Notes
+            // Doctor Notes
             TextFormField(
               controller: _notesController,
               maxLines: 3,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Doctor Notes / Instructions',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.white,
+                border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 24),
 
-            // 🔹 Medicines Section
-            Text(
+            const SizedBox(height: 24),
+            const Text(
               'Medicines',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.primaryBlue,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
 
-            // 🔹 Medicine Forms with animation
-            AnimatedList(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              initialItemCount: _medicines.length,
-              itemBuilder: (context, index, animation) {
-                final medicine = _medicines[index];
+            // Medicine Forms
+            ..._medicines.asMap().entries.map((entry) {
+              final index = entry.key;
+              final medicine = entry.value;
 
-                return SizeTransition(
-                  sizeFactor: animation,
-                  child: Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Medicine ${index + 1}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              if (_medicines.length > 1)
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () => _removeMedicine(index),
-                                ),
-                            ],
+                          Text(
+                            'Medicine ${index + 1}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          const SizedBox(height: 8),
-                          medicine.build(),
+                          if (_medicines.length > 1)
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _removeMedicine(index),
+                            ),
                         ],
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      medicine.build(),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            }).toList(),
 
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: _addMedicine,
-              icon: const Icon(Icons.add, color: AppTheme.primaryBlue),
-              label: Text(
-                'Add Another Medicine',
-                style: TextStyle(color: AppTheme.primaryBlue),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AppTheme.primaryBlue),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              icon: const Icon(Icons.add),
+              label: const Text('Add Another Medicine'),
             ),
 
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              height: 50,
               child: ElevatedButton(
                 onPressed: _saving ? null : _savePrescription,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
                 child: _saving
-                    ? const CircularProgressIndicator(
-                        color: Colors.white,
-                      )
-                    : const Text(
-                        'Save Prescription',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Save Prescription'),
               ),
             ),
           ],
